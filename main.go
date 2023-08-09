@@ -190,11 +190,19 @@ func main() {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 
+	google.CredentialsFromJSON()
+	google.ConfigFromJSON()
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveReadonlyScope, driveactivity.DriveActivityReadonlyScope)
+	config, err := google.ConfigFromJSON(b,
+		drive.DriveReadonlyScope,
+		driveactivity.DriveActivityReadonlyScope,
+		drive.DriveFileScope,
+		drive.DriveMetadataReadonlyScope,
+		drive.DriveMetadataScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
+
 	client := getClient(config)
 
 	driveService, err := drive.NewService(ctx, option.WithHTTPClient(client))
@@ -202,7 +210,26 @@ func main() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	fileList, err := driveService.Files.List().PageSize(10).Do()
+	token, err := driveService.Changes.GetStartPageToken().Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve Drive client: %v", err)
+	}
+
+	fmt.Println("***StartPageToken***", token)
+
+	changes, _ := driveService.Changes.List("547782").Do()
+
+	fmt.Println("CHANGES", changes.Changes)
+
+	for _, c := range changes.Changes {
+		fmt.Println("***Changes***")
+		fmt.Println("File name: " + c.File.Name)
+		fmt.Println("Drive Id: " + c.DriveId)
+	}
+
+	fileList, err := driveService.Files.List().
+		Q("mimeType= 'application/vnd.google-apps.folder'").
+		SupportsAllDrives(true).PageSize(10).Do()
 	// Fields("mimeType= 'application/vnd.google-apps.folder'").Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve files: %v", err)
@@ -213,7 +240,7 @@ func main() {
 		fmt.Println("No files found.")
 	} else {
 		for _, i := range fileList.Files {
-			fmt.Printf("%s (%s)\n", i.Name, i.Id)
+			fmt.Printf("Name: %s, ID: %s\n", i.Name, i.Id)
 		}
 	}
 
@@ -238,7 +265,7 @@ func main() {
 		log.Fatalf("Unable to retrieve driveactivity Client %v", err)
 	}
 
-	q := driveactivity.QueryDriveActivityRequest{PageSize: 10}
+	q := driveactivity.QueryDriveActivityRequest{PageSize: 5}
 
 	resp, err := driveActivityService.Activity.Query(&q).Do()
 	if err != nil {
