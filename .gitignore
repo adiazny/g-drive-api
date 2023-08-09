@@ -37,4 +37,4 @@ examples/*.csv
 
 # Secrets
 token.json
-credentials.json
+*.json

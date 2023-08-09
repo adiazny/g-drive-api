@@ -190,8 +190,8 @@ func main() {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 
-	google.CredentialsFromJSON()
-	google.ConfigFromJSON()
+	//google.CredentialsFromJSON()
+	//google.ConfigFromJSON()
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b,
 		drive.DriveReadonlyScope,
@@ -202,6 +202,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
+
+	//===================================
+	// Drive API
 
 	client := getClient(config)
 
@@ -217,15 +220,15 @@ func main() {
 
 	fmt.Println("***StartPageToken***", token)
 
-	changes, _ := driveService.Changes.List("547782").Do()
+	// changes, _ := driveService.Changes.List("547782").Do()
 
-	fmt.Println("CHANGES", changes.Changes)
+	// fmt.Println("CHANGES", changes.Changes)
 
-	for _, c := range changes.Changes {
-		fmt.Println("***Changes***")
-		fmt.Println("File name: " + c.File.Name)
-		fmt.Println("Drive Id: " + c.DriveId)
-	}
+	// for _, c := range changes.Changes {
+	// 	fmt.Println("***Changes***")
+	// 	fmt.Println("File name: " + c.File.Name)
+	// 	fmt.Println("Drive Id: " + c.DriveId)
+	// }
 
 	fileList, err := driveService.Files.List().
 		Q("mimeType= 'application/vnd.google-apps.folder'").
@@ -244,7 +247,7 @@ func main() {
 		}
 	}
 
-	downloadedFile, err := driveService.Files.Get("1tbe5uJDgmLm4R6wGri5hA53SYv5ytBqD").Download()
+	downloadedFile, err := driveService.Files.Get("1Gd4CvxH3iHl9YtPKgz_oaKIUQaKi5PEB").Download()
 	if err != nil {
 		log.Fatalf("Unable to download files: %v", err)
 	}
@@ -257,6 +260,9 @@ func main() {
 	}
 
 	saveFile("strong.csv", fileBytes)
+
+	//===================================
+	// Drive Activity API
 
 	driveActivityClient := getClient(config)
 
@@ -288,14 +294,32 @@ func main() {
 
 	//}
 
+	// fmt.Println("Recent Activity:")
+	// if len(resp.Activities) > 0 {
+	// 	for _, a := range resp.Activities {
+	// 		time := getTimeInfo(a)
+	// 		action := getActionInfo(a.PrimaryActionDetail)
+	// 		actors := getActorsInfo(a.Actors)
+	// 		targets := getTargetsInfo(a.Targets)
+	// 		fmt.Printf("%s: %s, Action: %s, %s\n", time, truncated(actors), action, truncated(targets))
+	// 	}
+	// } else {
+	// 	fmt.Print("No activity.")
+	// }
+
 	fmt.Println("Recent Activity:")
 	if len(resp.Activities) > 0 {
+
 		for _, a := range resp.Activities {
-			time := getTimeInfo(a)
-			action := getActionInfo(a.PrimaryActionDetail)
-			actors := getActorsInfo(a.Actors)
-			targets := getTargetsInfo(a.Targets)
-			fmt.Printf("%s: %s, Action: %s, %s\n", time, truncated(actors), action, truncated(targets))
+
+			s, err := a.MarshalJSON()
+			if err != nil {
+				log.Fatalf("Unable to marshall json. %v", err)
+			}
+
+			//fmt.Printf("activities: %s\n", string(s))
+			fmt.Print(string(s))
+
 		}
 	} else {
 		fmt.Print("No activity.")
