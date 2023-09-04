@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/driveactivity/v2"
 	"google.golang.org/api/option"
@@ -185,22 +184,36 @@ func getTargetsInfo(targets []*driveactivity.Target) []string {
 
 func main() {
 	ctx := context.Background()
-	b, err := os.ReadFile("credentials.json")
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
+	// b, err := os.ReadFile("credentials.json")
+	// if err != nil {
+	// 	log.Fatalf("Unable to read client secret file: %v", err)
+	// }
 
 	//google.CredentialsFromJSON()
 	//google.ConfigFromJSON()
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b,
-		drive.DriveReadonlyScope,
-		driveactivity.DriveActivityReadonlyScope,
-		drive.DriveFileScope,
-		drive.DriveMetadataReadonlyScope,
-		drive.DriveMetadataScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	// config, err := google.ConfigFromJSON(b,
+	// 	drive.DriveReadonlyScope,
+	// 	driveactivity.DriveActivityReadonlyScope,
+	// 	drive.DriveFileScope,
+	// 	drive.DriveMetadataReadonlyScope,
+	// 	drive.DriveMetadataScope)
+	// if err != nil {
+	// 	log.Fatalf("Unable to parse client secret file to config: %v", err)
+	// }
+
+	config := &oauth2.Config{
+		ClientID:     "XYZ",
+		ClientSecret: "XYZ",
+		Scopes: []string{
+			drive.DriveReadonlyScope,
+			driveactivity.DriveActivityReadonlyScope,
+		},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://accounts.google.com/o/oauth2/auth",
+			TokenURL: "https://oauth2.googleapis.com/token",
+		},
+		RedirectURL: "http://localhost",
 	}
 
 	//===================================
@@ -213,12 +226,12 @@ func main() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	token, err := driveService.Changes.GetStartPageToken().Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve Drive client: %v", err)
-	}
+	// token, err := driveService.Changes.GetStartPageToken().Do()
+	// if err != nil {
+	// 	log.Fatalf("Unable to retrieve Drive client: %v", err)
+	// }
 
-	fmt.Println("***StartPageToken***", token)
+	//fmt.Println("***StartPageToken***", token)
 
 	// changes, _ := driveService.Changes.List("547782").Do()
 
@@ -230,24 +243,24 @@ func main() {
 	// 	fmt.Println("Drive Id: " + c.DriveId)
 	// }
 
-	fileList, err := driveService.Files.List().
-		Q("mimeType= 'application/vnd.google-apps.folder'").
-		SupportsAllDrives(true).PageSize(10).Do()
-	// Fields("mimeType= 'application/vnd.google-apps.folder'").Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
-	}
+	// fileList, err := driveService.Files.List().
+	// 	Q("mimeType= 'application/vnd.google-apps.folder'").
+	// 	SupportsAllDrives(true).PageSize(10).Do()
+	// // Fields("mimeType= 'application/vnd.google-apps.folder'").Do()
+	// if err != nil {
+	// 	log.Fatalf("Unable to retrieve files: %v", err)
+	// }
 
-	fmt.Println("Files:")
-	if len(fileList.Files) == 0 {
-		fmt.Println("No files found.")
-	} else {
-		for _, i := range fileList.Files {
-			fmt.Printf("Name: %s, ID: %s\n", i.Name, i.Id)
-		}
-	}
+	// fmt.Println("Files:")
+	// if len(fileList.Files) == 0 {
+	// 	fmt.Println("No files found.")
+	// } else {
+	// 	for _, i := range fileList.Files {
+	// 		fmt.Printf("Name: %s, ID: %s\n", i.Name, i.Id)
+	// 	}
+	// }
 
-	downloadedFile, err := driveService.Files.Get("1Gd4CvxH3iHl9YtPKgz_oaKIUQaKi5PEB").Download()
+	downloadedFile, err := driveService.Files.Get("1tO3DENjNTTiClwaxTerQMRVJ5sWdYCOe").Download()
 	if err != nil {
 		log.Fatalf("Unable to download files: %v", err)
 	}
@@ -271,7 +284,7 @@ func main() {
 		log.Fatalf("Unable to retrieve driveactivity Client %v", err)
 	}
 
-	q := driveactivity.QueryDriveActivityRequest{PageSize: 5}
+	q := driveactivity.QueryDriveActivityRequest{PageSize: 5, Filter: "detail.action_detail_case:CREATE"}
 
 	resp, err := driveActivityService.Activity.Query(&q).Do()
 	if err != nil {
@@ -309,18 +322,24 @@ func main() {
 
 	fmt.Println("Recent Activity:")
 	if len(resp.Activities) > 0 {
-
-		for _, a := range resp.Activities {
-
-			s, err := a.MarshalJSON()
-			if err != nil {
-				log.Fatalf("Unable to marshall json. %v", err)
-			}
-
-			//fmt.Printf("activities: %s\n", string(s))
-			fmt.Print(string(s))
-
+		json, err := resp.Activities[0].MarshalJSON()
+		if err != nil {
+			log.Fatalf("Unable to marshall json. %v", err)
 		}
+
+		fmt.Print(string(json))
+
+		// for _, a := range resp.Activities {
+
+		// 	s, err := a.MarshalJSON()
+		// 	if err != nil {
+		// 		log.Fatalf("Unable to marshall json. %v", err)
+		// 	}
+
+		// 	//fmt.Printf("activities: %s\n", string(s))
+		// 	fmt.Print(string(s))
+
+		// }
 	} else {
 		fmt.Print("No activity.")
 	}
