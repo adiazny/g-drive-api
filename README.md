@@ -1,6 +1,17 @@
 # Google Drive API Sandbox
 
 ## Drive API Docs
+* How you can use client libraries and Application Default Credentials to access Google APIs: https://cloud.google.com/docs/authentication/client-libraries
+* Using an API key with client libraries: https://cloud.google.com/docs/authentication/api-keys#using-with-client-libs
+* [Set up ADC](https://cloud.google.com/docs/authentication/provide-credentials-adc) for the environment where your application is running
+* For a local development environment, you can [set up ADC with your user credentials](https://cloud.google.com/docs/authentication/provide-credentials-adc#local-dev) by using the gcloud CLI
+* For production environments, you [set up ADC by attaching a service account](https://cloud.google.com/docs/authentication/provide-credentials-adc#attached-sa)
+* [Using OAuth 2.0 to Access Google APIs] (https://developers.google.com/identity/protocols/oauth2)
+* [Authentication Use Cases](https://cloud.google.com/docs/authentication/use-cases)
+* [Creating authenticated transports to Google's HTTP and gRPC APIs](https://pkg.go.dev/google.golang.org/api/transport)
+
+* [Drive create credentials](https://developers.google.com/workspace/guides/create-credentials)
+** Key > Set up domain-wide delegation for a service account
 * Drive API Go Quickstart: https://developers.google.com/drive/api/quickstart/go
 * Drive Activity Go Quickstart: https://developers.google.com/drive/activity/v2/quickstart/go
 * Push Notifications: https://developers.google.com/drive/api/guides/push
