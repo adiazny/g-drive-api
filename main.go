@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/driveactivity/v2"
 	"google.golang.org/api/option"
@@ -184,37 +185,38 @@ func getTargetsInfo(targets []*driveactivity.Target) []string {
 
 func main() {
 	ctx := context.Background()
-	// b, err := os.ReadFile("credentials.json")
-	// if err != nil {
-	// 	log.Fatalf("Unable to read client secret file: %v", err)
-	// }
+
+	b, err := os.ReadFile("credentials.json")
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
 
 	//google.CredentialsFromJSON()
 	//google.ConfigFromJSON()
 	// If modifying these scopes, delete your previously saved token.json.
-	// config, err := google.ConfigFromJSON(b,
-	// 	drive.DriveReadonlyScope,
-	// 	driveactivity.DriveActivityReadonlyScope,
-	// 	drive.DriveFileScope,
-	// 	drive.DriveMetadataReadonlyScope,
-	// 	drive.DriveMetadataScope)
-	// if err != nil {
-	// 	log.Fatalf("Unable to parse client secret file to config: %v", err)
-	// }
-
-	config := &oauth2.Config{
-		ClientID:     "XYZ",
-		ClientSecret: "XYZ",
-		Scopes: []string{
-			drive.DriveReadonlyScope,
-			driveactivity.DriveActivityReadonlyScope,
-		},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://accounts.google.com/o/oauth2/auth",
-			TokenURL: "https://oauth2.googleapis.com/token",
-		},
-		RedirectURL: "http://localhost",
+	config, err := google.ConfigFromJSON(b,
+		drive.DriveReadonlyScope,
+		driveactivity.DriveActivityReadonlyScope,
+		drive.DriveFileScope,
+		drive.DriveMetadataReadonlyScope,
+		drive.DriveMetadataScope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
+
+	// config := &oauth2.Config{
+	// 	ClientID:     "XYZ",
+	// 	ClientSecret: "XYZ",
+	// 	Scopes: []string{
+	// 		drive.DriveReadonlyScope,
+	// 		driveactivity.DriveActivityReadonlyScope,
+	// 	},
+	// 	Endpoint: oauth2.Endpoint{
+	// 		AuthURL:  "https://accounts.google.com/o/oauth2/auth",
+	// 		TokenURL: "https://oauth2.googleapis.com/token",
+	// 	},
+	// 	RedirectURL: "http://localhost",
+	// }
 
 	//===================================
 	// Drive API
@@ -225,6 +227,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
+
+	// Search for files and folders guide: https://developers.google.com/drive/api/guides/search-files
+	filesByTime, err := driveService.Files.List().PageSize(5).OrderBy("createdTime desc").Q("name = 'strong.csv'").Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve file list: %v", err)
+	}
+
+	fmt.Println("**FILES COUNT**", len(filesByTime.Files))
+
+	fmt.Println("**FILES BY TIME**", filesByTime.Files[0].Id)
 
 	// token, err := driveService.Changes.GetStartPageToken().Do()
 	// if err != nil {
@@ -260,7 +272,7 @@ func main() {
 	// 	}
 	// }
 
-	downloadedFile, err := driveService.Files.Get("1tO3DENjNTTiClwaxTerQMRVJ5sWdYCOe").Download()
+	downloadedFile, err := driveService.Files.Get("1iDQ7iawuFJax2-fvuwhoWMQSuM0DfBuh").Download()
 	if err != nil {
 		log.Fatalf("Unable to download files: %v", err)
 	}
@@ -284,9 +296,11 @@ func main() {
 		log.Fatalf("Unable to retrieve driveactivity Client %v", err)
 	}
 
-	q := driveactivity.QueryDriveActivityRequest{PageSize: 5, Filter: "detail.action_detail_case:CREATE"}
+	//q := driveactivity.QueryDriveActivityRequest{PageSize: 5, Filter: "detail.action_detail_case:CREATE"}
 
-	resp, err := driveActivityService.Activity.Query(&q).Do()
+	query := driveactivity.QueryDriveActivityRequest{Filter: "time >= '2023-01-01T00:00:00Z' AND detail.create.file.name = 'strong.csv'"}
+
+	resp, err := driveActivityService.Activity.Query(&query).Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve list of activities. %v", err)
 	}
